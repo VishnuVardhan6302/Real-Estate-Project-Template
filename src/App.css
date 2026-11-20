@@ -1,0 +1,378 @@
+/* Header layout and responsive navigation fix.
+   Imported after App.css and RealEstateTypography.css. */
+
+.site-header {
+  position: sticky !important;
+  top: 0 !important;
+  left: 0;
+  right: 0;
+  z-index: 1000 !important;
+  width: 100%;
+  min-height: 76px;
+  height: auto !important;
+  box-sizing: border-box;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px;
+  padding: 14px clamp(20px, 7.2vw, 100px) !important;
+  background: #f4f1ec !important;
+  box-shadow: 0 2px 14px rgba(39, 51, 56, 0.07);
+}
+
+.site-header .brand {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 11px;
+  flex: 0 0 auto;
+  min-width: max-content;
+  color: #273338 !important;
+  text-decoration: none;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.site-header .brand > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px !important;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+.site-header .brand small {
+  display: block;
+  font-size: 8px !important;
+  font-weight: 500;
+  letter-spacing: 2px;
+}
+
+.site-header .brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid rgba(97, 135, 100, 0.55);
+  border-radius: 50%;
+  color: #618764;
+  font-size: 19px !important;
+}
+
+.site-header .nav {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end;
+  gap: clamp(16px, 2.2vw, 32px);
+  position: static;
+  margin-left: auto;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.site-header .nav a,
+.site-header .nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+  color: #273338 !important;
+  font-size: 12px !important;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+  transition: color 180ms ease, opacity 180ms ease;
+}
+
+.site-header .nav a:hover,
+.site-header .nav button:hover {
+  color: #618764 !important;
+}
+
+.site-header .nav .nav-cta {
+  padding: 10px 15px !important;
+  border: 1px solid #618764 !important;
+  color: #2b5748 !important;
+  background: transparent !important;
+}
+
+.site-header .nav .nav-cta:hover {
+  color: #fff !important;
+  background: #618764 !important;
+}
+
+.site-header .menu-toggle {
+  display: none !important;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid rgba(39, 51, 56, 0.2);
+  background: transparent;
+  color: #273338;
+  cursor: pointer;
+}
+
+.site-header .menu-toggle svg {
+  width: 21px;
+  height: 21px;
+}
+
+/* Keep anchor destinations visible below the sticky header. */
+#home,
+#homes,
+#about,
+#testimonials,
+#contact,
+#intro,
+#property-overview,
+#property-features,
+#property-contact {
+  scroll-margin-top: 92px;
+}
+
+@media (max-width: 900px) {
+  .site-header {
+    min-height: 68px;
+    padding: 12px 5% !important;
+    gap: 14px;
+  }
+
+  .site-header .menu-toggle {
+    display: inline-flex !important;
+    flex: 0 0 42px;
+    margin-left: auto;
+  }
+
+  .site-header .nav {
+    display: none !important;
+    position: absolute !important;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    box-sizing: border-box;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start;
+    gap: 0;
+    margin: 0;
+    padding: 12px 5% 18px;
+    background: #f4f1ec;
+    border-top: 1px solid rgba(39, 51, 56, 0.1);
+    box-shadow: 0 12px 18px rgba(39, 51, 56, 0.1);
+    white-space: normal;
+  }
+
+  .site-header .nav.open {
+    display: flex !important;
+  }
+
+  .site-header .nav a,
+  .site-header .nav button {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    padding: 13px 4px !important;
+    text-align: left;
+    font-size: 13px !important;
+  }
+
+  .site-header .nav .nav-cta {
+    justify-content: center;
+    margin-top: 8px;
+    padding: 11px 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header {
+    min-height: 64px;
+    padding: 10px 16px !important;
+  }
+
+  .site-header .brand > span:last-child {
+    font-size: 12px !important;
+    letter-spacing: 1.1px;
+  }
+
+  .site-header .brand small {
+    font-size: 7px !important;
+    letter-spacing: 1.5px;
+  }
+
+  .site-header .brand-mark {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header *,
+  .site-header *::before,
+  .site-header *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Additional safeguards for a stable, correctly aligned top header. */
+.site-header {
+  position: sticky !important;
+  inset-block-start: 0 !important;
+  isolation: isolate;
+  flex-wrap: nowrap !important;
+}
+.site-header .brand { flex-shrink: 0 !important; }
+.site-header .nav { min-width: 0; }
+.site-header .nav a, .site-header .nav button { white-space: nowrap; }
+@media (min-width: 901px) {
+  .site-header { min-height: 72px; }
+  .site-header .nav { gap: clamp(12px, 1.7vw, 25px); }
+}
+@media (max-width: 900px) {
+  .site-header { position: sticky !important; }
+  .site-header .nav { z-index: 1001; }
+}
+/* Typography refinement for the Leah Bennett Real Estate website.
+   Imported after App.css so existing layout, colors, images and animations stay intact. */
+
+html {
+  font-size: 15px;
+}
+
+body {
+  font-size: 0.95rem !important;
+  line-height: 1.65;
+}
+
+p,
+li,
+label,
+input,
+textarea,
+select,
+button {
+  font-size: 0.92rem;
+}
+
+h1 {
+  font-size: clamp(2.15rem, 4.2vw, 3.65rem) !important;
+  line-height: 1.12 !important;
+}
+
+h2 {
+  font-size: clamp(1.65rem, 3vw, 2.55rem) !important;
+  line-height: 1.2 !important;
+}
+
+h3 {
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem) !important;
+  line-height: 1.3 !important;
+}
+
+h4,
+h5,
+h6 {
+  font-size: 1rem !important;
+  line-height: 1.35 !important;
+}
+
+/* Main navigation and branding */
+.site-header a,
+.site-header button,
+.site-header nav,
+.site-header nav a {
+  font-size: 0.88rem !important;
+}
+
+/* Hero and section copy */
+.hero-content p,
+.hero p,
+.section-heading p,
+.section-intro,
+.about-content p,
+.property-detail p,
+.testimonial-card p,
+.contact-section p {
+  font-size: 0.92rem !important;
+  line-height: 1.7 !important;
+}
+
+/* Property cards and listing details */
+.property-card h3,
+.property-info h3,
+.property-details h3,
+.property-detail h3 {
+  font-size: 1.12rem !important;
+}
+
+.property-card p,
+.property-info p,
+.property-meta,
+.property-card span,
+.property-detail li {
+  font-size: 0.84rem !important;
+}
+
+/* Buttons, forms, modal and footer */
+button,
+.button,
+a.button,
+input,
+textarea,
+select,
+.modal-content,
+footer {
+  font-size: 0.88rem;
+}
+
+input,
+textarea,
+select {
+  line-height: 1.5;
+}
+
+@media (max-width: 800px) {
+  html { font-size: 14.5px; }
+  h1 { font-size: clamp(2rem, 7vw, 3rem) !important; }
+  h2 { font-size: clamp(1.55rem, 5vw, 2.2rem) !important; }
+}
+
+@media (max-width: 580px) {
+  html { font-size: 14px; }
+  body { font-size: 0.9rem !important; }
+  p,
+  li { font-size: 0.88rem; }
+  .site-header nav a { font-size: 0.82rem !important; }
+}
+
+/* Final compact type scale: overrides larger rules in the original App.css. */
+html { font-size: 14px !important; }
+body { font-size: 14px !important; line-height: 1.6 !important; }
+main p, main li, main label, main input, main textarea, main select { font-size: 13px; }
+main h1 { font-size: clamp(30px, 4vw, 54px) !important; line-height: 1.12 !important; }
+main h2 { font-size: clamp(25px, 3vw, 38px) !important; line-height: 1.2 !important; }
+main h3 { font-size: clamp(17px, 1.5vw, 21px) !important; line-height: 1.3 !important; }
+.hero-copy h1, .hero h1 { font-size: clamp(34px, 4.8vw, 62px) !important; }
+.hero-copy p, .hero p { font-size: 14px !important; }
+.section-heading p, .open-copy p, .about-copy li, .testimonial-grid blockquote { font-size: 13px !important; }
+.property-card h3 { font-size: 18px !important; }
+.property-card p, .property-meta, .property-card-link { font-size: 12px !important; }
+.property-detail-page h1 { font-size: clamp(27px, 4vw, 42px) !important; }
+.property-detail-page h2 { font-size: clamp(22px, 3vw, 30px) !important; }
+.property-detail-page p, .property-detail-page li, .property-detail-page button, .property-detail-page a { font-size: 13px; }
+.contact-form h3 { font-size: 21px !important; }
+@media (max-width: 768px) {
+  html { font-size: 13px !important; }
+  body { font-size: 13px !important; }
+  .hero-copy h1, .hero h1 { font-size: clamp(31px, 8vw, 46px) !important; }
+  main h2 { font-size: clamp(23px, 6vw, 31px) !important; }
+}
