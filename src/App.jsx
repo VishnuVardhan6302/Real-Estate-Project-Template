@@ -1,25 +1,23 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Menu, X, ArrowUpRight, ArrowRight, Instagram, Facebook, Linkedin,
   Play, BedDouble, Bath, Maximize, MapPin, CheckCircle, ArrowLeft,
-  Building2, Car, Layers, Briefcase, Sofa
+  Building2, Car, Layers, Briefcase, Sofa, ChevronLeft, ChevronRight,
+  Search, Heart, SlidersHorizontal
 } from "lucide-react";
-
-import "./App.css";
 
 // --------------------------------------------------
 // PROPERTY IMAGES
 // --------------------------------------------------
 
 const IMAGES_3D = {
-  heroVilla: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1800&q=85",
+  heroVilla: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=2200&q=90",
 
   modernHouse1: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=85",
   modernHouse2: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=85",
   modernHouse3: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=85",
 
-  // NEW RENTAL PROPERTY IMAGES
+  // RENTAL PROPERTY IMAGES
   rentalHome1: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1200&q=85",
   rentalHome2: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=85",
   rentalHome3: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=85",
@@ -31,6 +29,38 @@ const IMAGES_3D = {
   interiorTour3d: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=85",
   contactInterior3d: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=85"
 };
+
+// --------------------------------------------------
+// HERO CAROUSEL SLIDES
+// --------------------------------------------------
+
+const HERO_SLIDES = [
+  {
+    image: IMAGES_3D.heroVilla,
+    label: "Signature Architectural Villa",
+    sublabel: "Curated Luxury Residences"
+  },
+  {
+    image: IMAGES_3D.modernHouse1,
+    label: "Modern Luxury Family Home",
+    sublabel: "For Sale · $1,250,000"
+  },
+  {
+    image: IMAGES_3D.modernHouse3,
+    label: "Elegant Premium Family Estate",
+    sublabel: "For Sale · $1,475,000"
+  },
+  {
+    image: IMAGES_3D.rentalHome3,
+    label: "Luxury Villa for Rent",
+    sublabel: "For Rent · $3,200 / Month"
+  },
+  {
+    image: IMAGES_3D.interiorTour3d,
+    label: "Contemporary Living Interiors",
+    sublabel: "3D Virtual Tours Available"
+  }
+];
 
 // --------------------------------------------------
 // PROPERTY DATA - HOMES FOR SALE
@@ -236,6 +266,35 @@ const commercialProperties = [
   }
 ];
 
+
+// --------------------------------------------------
+// CATEGORY-BASED PROPERTY TYPES
+// --------------------------------------------------
+
+const PROPERTY_TYPES = {
+  sale: [
+    "Residential",
+    "Apartment",
+    "Villa",
+    "Townhouse",
+    "Land"
+  ],
+
+  rent: [
+    "Residential Rental",
+    "Apartment",
+    "Villa",
+    "Townhouse"
+  ],
+
+  commercial: [
+    "Office Space",
+    "Retail Shop",
+    "Warehouse",
+    "Commercial Building"
+  ]
+};
+
 // --------------------------------------------------
 // TESTIMONIALS
 // --------------------------------------------------
@@ -256,8 +315,21 @@ const testimonials = [
 ];
 
 // --------------------------------------------------
-// FORM STYLES
+// HELPERS & STYLES
 // --------------------------------------------------
+
+const parseNumericValue = value => {
+  if (typeof value === "number") return value;
+  const cleaned = String(value || "").replace(/[^0-9.]/g, "");
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getCategoryBadgeLabel = category => {
+  if (category === "rent") return "For Rent";
+  if (category === "commercial") return "Commercial";
+  return "For Sale";
+};
 
 const listingInputStyle = {
   width: "100%",
@@ -269,6 +341,31 @@ const listingInputStyle = {
   color: "#273338",
   font: "inherit",
   fontWeight: 400,
+  outlineColor: "#618764"
+};
+
+const toolbarInputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "11px 36px 11px 38px",
+  border: "1px solid #d7ddd7",
+  borderRadius: 999,
+  background: "#fff",
+  color: "#273338",
+  font: "inherit",
+  fontSize: 14,
+  outlineColor: "#618764"
+};
+
+const toolbarSelectStyle = {
+  padding: "11px 14px",
+  border: "1px solid #d7ddd7",
+  borderRadius: 999,
+  background: "#fff",
+  color: "#273338",
+  font: "inherit",
+  fontSize: 14,
+  cursor: "pointer",
   outlineColor: "#618764"
 };
 
@@ -429,7 +526,7 @@ function PropertyDetail({ property, onBack }) {
           <span className="brand-mark">◈</span>
           <span>
             LEAH BENNETT
-            <small>REAL ESTATE</small>
+            <small>BUY · SELL · RENT · COMMERCIAL</small>
           </span>
         </a>
 
@@ -670,107 +767,413 @@ function PropertyDetail({ property, onBack }) {
 // REUSABLE PROPERTY SECTION
 // --------------------------------------------------
 
-function PropertySection({ id, title, properties, onOpen }) {
+function PropertySection({
+  id,
+  title,
+  properties,
+  activeCategory,
+  onCategoryChange,
+  searchQuery,
+  onSearchChange,
+  sortBy,
+  onSortChange,
+  savedIds,
+  onToggleSave,
+  showSavedOnly,
+  onToggleSavedOnly,
+  onOpen
+}) {
+  // Normalize legacy/custom listing data before counting or filtering. Older
+  // saved listings may not contain every optional field.
+  const safeProperties = useMemo(() => (Array.isArray(properties) ? properties : [])
+    .filter(Boolean)
+    .map((property, index) => ({
+      ...property,
+      id: property.id ?? `listing-${index}`,
+      category: ["sale", "rent", "commercial"].includes(property.category)
+        ? property.category : "sale",
+      title: String(property.title || "Untitled Property"),
+      address: String(property.address || "Address not provided"),
+      type: String(property.type || "Property"),
+      price: String(property.price || "Price on request"),
+      image: String(property.image || ""),
+      beds: String(property.beds || "—"),
+      baths: String(property.baths || "—"),
+      area: String(property.area || "—"),
+      features: Array.isArray(property.features) ? property.features : []
+    })), [properties]);
+
+  const categoryCounts = useMemo(() => ({
+    all: safeProperties.length,
+    sale: safeProperties.filter(p => p.category === "sale").length,
+    rent: safeProperties.filter(p => p.category === "rent").length,
+    commercial: safeProperties.filter(p => p.category === "commercial").length
+  }), [safeProperties]);
+
+  const categories = [
+    { value: "all", label: `All Properties (${categoryCounts.all})` },
+    { value: "sale", label: `For Sale (${categoryCounts.sale})` },
+    { value: "rent", label: `For Rent (${categoryCounts.rent})` },
+    { value: "commercial", label: `Commercial (${categoryCounts.commercial})` }
+  ];
+
+  const visibleProperties = useMemo(() => {
+    const query = String(searchQuery || "").trim().toLowerCase();
+
+    const filtered = safeProperties.filter(property => {
+      if (activeCategory !== "all" && property.category !== activeCategory) return false;
+      if (showSavedOnly && !savedIds.some(id => String(id) === String(property.id))) return false;
+      if (!query) return true;
+
+      return [property.title, property.address, property.type, property.description]
+        .some(value => String(value || "").toLowerCase().includes(query));
+    });
+
+    if (sortBy === "featured") return filtered;
+
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "price-asc") {
+        return parseNumericValue(a.price) - parseNumericValue(b.price);
+      }
+      if (sortBy === "price-desc") {
+        return parseNumericValue(b.price) - parseNumericValue(a.price);
+      }
+      if (sortBy === "area-desc") {
+        return parseNumericValue(b.area) - parseNumericValue(a.area);
+      }
+      return 0;
+    });
+  }, [safeProperties, activeCategory, searchQuery, sortBy, showSavedOnly, savedIds]);
+
+  const hasActiveFilters =
+    activeCategory !== "all" ||
+    searchQuery.trim() !== "" ||
+    sortBy !== "featured" ||
+    showSavedOnly;
+
+  const resetFilters = () => {
+    onCategoryChange("all");
+    onSearchChange("");
+    onSortChange("featured");
+    if (showSavedOnly) onToggleSavedOnly();
+  };
+
   return (
     <section className="properties section-light" id={id}>
 
       <div className="section-heading reveal">
+        <span className="section-kicker">CURATED REAL ESTATE</span>
         <h2>{title}</h2>
+        <p>Discover residences, rentals and commercial spaces in one place.</p>
       </div>
 
-      {properties.length === 0 ? (
-        <p style={{
-          textAlign: "center",
-          padding: "35px 15px",
-          color: "#777"
+      <div className="property-filters reveal" role="group" aria-label="Filter properties">
+        {categories.map(category => (
+          <button
+            key={category.value}
+            type="button"
+            className={activeCategory === category.value ? "property-filter active" : "property-filter"}
+            aria-pressed={activeCategory === category.value}
+            onClick={() => onCategoryChange(category.value)}
+          >
+            {category.label}
+          </button>
+        ))}
+      </div>
+
+      {/* SEARCH, SORT & SAVED TOOLBAR */}
+
+      <div
+        className="reveal"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          maxWidth: 1120,
+          margin: "0 auto 28px"
+        }}
+      >
+        <div style={{ position: "relative", flex: "1 1 260px", maxWidth: 420 }}>
+          <Search
+            size={16}
+            color="#6b7773"
+            style={{
+              position: "absolute",
+              left: 14,
+              top: "50%",
+              transform: "translateY(-50%)",
+              pointerEvents: "none"
+            }}
+          />
+          <input
+            type="search"
+            aria-label="Search properties by title, address, or type"
+            placeholder="Search by title, street, or type..."
+            value={searchQuery}
+            onChange={event => onSearchChange(event.target.value)}
+            style={toolbarInputStyle}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => onSearchChange("")}
+              style={{
+                position: "absolute",
+                right: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                border: 0,
+                background: "transparent",
+                color: "#6b7773",
+                cursor: "pointer",
+                padding: 4,
+                display: "flex"
+              }}
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
+
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 10
         }}>
-          No listings available.
-        </p>
+          <button
+            type="button"
+            onClick={onToggleSavedOnly}
+            aria-pressed={showSavedOnly}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "10px 15px",
+              borderRadius: 999,
+              border: showSavedOnly ? "1px solid #2B5748" : "1px solid #d7ddd7",
+              background: showSavedOnly ? "#2B5748" : "#fff",
+              color: showSavedOnly ? "#fff" : "#273338",
+              font: "inherit",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "pointer"
+            }}
+          >
+            <Heart
+              size={14}
+              fill={showSavedOnly ? "currentColor" : "none"}
+            />
+            Saved ({savedIds.length})
+          </button>
+
+          <label style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 13,
+            color: "#55615d"
+          }}>
+            <SlidersHorizontal size={15} />
+            <select
+              aria-label="Sort properties"
+              value={sortBy}
+              onChange={event => onSortChange(event.target.value)}
+              style={toolbarSelectStyle}
+            >
+              <option value="featured">Sort: Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="area-desc">Area: Largest First</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {visibleProperties.length === 0 ? (
+        <div style={{
+          textAlign: "center",
+          padding: "42px 15px",
+          color: "#66726e"
+        }}>
+          <p style={{ margin: "0 0 16px" }}>
+            No properties match your current filters.
+          </p>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              style={{
+                padding: "10px 20px",
+                border: "1px solid #273338",
+                borderRadius: 999,
+                background: "transparent",
+                color: "#273338",
+                font: "inherit",
+                fontSize: 14,
+                cursor: "pointer"
+              }}
+            >
+              Reset Filters
+            </button>
+          )}
+        </div>
       ) : (
         <div className="property-grid">
 
-          {properties.map((property, index) => (
-            <article
-              className={`property-card reveal reveal-delay-${(index % 3) + 1}`}
-              key={property.id}
-              role="button"
-              tabIndex={0}
-              aria-label={property.title}
-              onClick={() => onOpen(property)}
-              onKeyDown={event => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onOpen(property);
-                }
-              }}
-              style={{ cursor: "pointer" }}
-            >
+          {visibleProperties.map((property, index) => {
+            const isSaved = savedIds.some(id => String(id) === String(property.id));
+            const badgeLabel = getCategoryBadgeLabel(property.category || "sale");
 
-              <div className="property-image">
-                <img
-                  src={property.image}
-                  alt={property.title}
-                />
+            return (
+              <article
+                className={`property-card reveal reveal-delay-${(index % 3) + 1}`}
+                key={property.id}
+                role="button"
+                tabIndex={0}
+                aria-label={property.title}
+                onClick={() => onOpen(property)}
+                onKeyDown={event => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpen(property);
+                  }
+                }}
+                style={{ cursor: "pointer" }}
+              >
 
-                <span className="image-arrow">
-                  <ArrowUpRight size={18} />
-                </span>
-              </div>
+                <div className="property-image" style={{ position: "relative" }}>
+                  <img
+                    src={property.image || IMAGES_3D.heroVilla}
+                    alt={property.title}
+                    loading="lazy"
+                  />
 
-              <p className="property-type">
-                {property.type}
-              </p>
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 14,
+                      left: 14,
+                      padding: "5px 11px",
+                      borderRadius: 999,
+                      background: "rgba(25, 36, 38, 0.78)",
+                      backdropFilter: "blur(6px)",
+                      color: "#fff",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase"
+                    }}
+                  >
+                    {badgeLabel}
+                  </span>
 
-              <h3>{property.title}</h3>
+                  <span className="image-arrow">
+                    <ArrowUpRight size={18} />
+                  </span>
+                </div>
 
-              <p className="property-address">
-                <MapPin size={13} />
-                {property.address}
-              </p>
+                <p className="property-type">
+                  {property.type}
+                </p>
 
-              <p className="property-price">
-                {property.price}
-              </p>
+                <h3>{property.title}</h3>
 
-              <div className="property-meta">
-                {property.category === "commercial" ? (
-                  <>
-                    <span>
-                      <Building2 size={14} />
-                      Commercial
-                    </span>
+                <p className="property-address">
+                  <MapPin size={13} />
+                  {property.address}
+                </p>
 
-                    <span>
-                      <Maximize size={14} />
-                      {property.area}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span>
-                      <BedDouble size={14} />
-                      {property.beds}
-                    </span>
+                <p className="property-price">
+                  {property.price}
+                </p>
 
-                    <span>
-                      <Bath size={14} />
-                      {property.baths}
-                    </span>
+                <div className="property-meta">
+                  {property.category === "commercial" ? (
+                    <>
+                      <span>
+                        <Building2 size={14} />
+                        {property.floors || "Commercial"}
+                      </span>
 
-                    <span>
-                      <Maximize size={14} />
-                      {property.area}
-                    </span>
-                  </>
-                )}
-              </div>
+                      {property.parking && (
+                        <span>
+                          <Car size={14} />
+                          {property.parking}
+                        </span>
+                      )}
 
-              <span className="property-card-link">
-                Details <ArrowUpRight size={14} />
-              </span>
+                      <span>
+                        <Maximize size={14} />
+                        {property.area}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        <BedDouble size={14} />
+                        {property.beds}
+                      </span>
 
-            </article>
-          ))}
+                      <span>
+                        <Bath size={14} />
+                        {property.baths}
+                      </span>
+
+                      <span>
+                        <Maximize size={14} />
+                        {property.area}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12
+                  }}
+                >
+                  <span className="property-card-link">
+                    Details <ArrowUpRight size={14} />
+                  </span>
+
+                  <button
+                    type="button"
+                    aria-label={isSaved ? `Remove ${property.title} from saved` : `Save ${property.title}`}
+                    aria-pressed={isSaved}
+                    onClick={event => {
+                      event.stopPropagation();
+                      onToggleSave(property.id);
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 34,
+                      height: 34,
+                      borderRadius: "50%",
+                      border: "1px solid #dfe5df",
+                      background: isSaved ? "#f2f7f3" : "#fff",
+                      color: isSaved ? "#b8443a" : "#66726e",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <Heart
+                      size={15}
+                      fill={isSaved ? "currentColor" : "none"}
+                    />
+                  </button>
+                </div>
+
+              </article>
+            );
+          })}
 
         </div>
       )}
@@ -790,6 +1193,26 @@ const App = () => {
   const [submitted, setSubmitted] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
 
+  // HERO CAROUSEL STATE
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroPaused, setHeroPaused] = useState(false);
+
+  // PROPERTIES FILTER & TOOLBAR STATE
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("featured");
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [savedIds, setSavedIds] = useState(() => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem("leahBennettSaved") || "[]"
+      );
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [listFormOpen, setListFormOpen] = useState(false);
   const [listingError, setListingError] = useState("");
   const [listingSuccess, setListingSuccess] = useState("");
@@ -806,26 +1229,36 @@ const App = () => {
     }
   });
 
-  const [newProperty, setNewProperty] = useState({
-    title: "",
-    address: "",
-    price: "",
-    type: "Residential",
-    listingCategory: "sale",
-    beds: "",
-    baths: "",
-    area: "",
-    description: "",
-    features: "",
-    sellerName: "",
-    sellerEmail: "",
-    image: "",
-    floors: "",
-    parking: "",
-    furnishing: "Unfurnished",
-    condition: "",
-    suitableFor: ""
-  });
+ const [newProperty, setNewProperty] = useState({
+  title: "",
+  address: "",
+  price: "",
+  type: "Residential",
+  listingCategory: "sale",
+
+  beds: "",
+  baths: "",
+  area: "",
+
+  description: "",
+  features: "",
+
+  sellerName: "",
+  sellerEmail: "",
+  image: "",
+
+  // Commercial details
+  floors: "",
+  parking: "",
+  furnishing: "Unfurnished",
+  condition: "",
+  suitableFor: "",
+
+  // Land details
+  zoning: "",
+  frontage: "",
+  roadAccess: "Yes"
+});
 
   const [form, setForm] = useState({
     name: "",
@@ -833,21 +1266,55 @@ const App = () => {
     message: ""
   });
 
-  const allProperties = [...properties, ...customProperties];
+  // Build one source of truth for the property section. This avoids accidental
+  // duplicate custom listings and keeps sale/rent/commercial filters consistent.
+  const combinedListings = useMemo(() => {
+    const merged = [...properties, ...rentalProperties, ...commercialProperties,
+      ...(Array.isArray(customProperties) ? customProperties : [])];
+    const byId = new Map();
+    merged.filter(Boolean).forEach((property, index) => {
+      const id = property.id ?? `listing-${index}`;
+      byId.set(String(id), { ...property, id,
+        category: ["sale", "rent", "commercial"].includes(property.category)
+          ? property.category : "sale" });
+    });
+    return Array.from(byId.values());
+  }, [customProperties]);
 
-  const saleListings = allProperties.filter(
-    p => !p.category || p.category === "sale"
-  );
+  // HERO CAROUSEL AUTO-ADVANCE
 
-  const rentListings = [
-    ...rentalProperties,
-    ...customProperties.filter(p => p.category === "rent")
-  ];
+  useEffect(() => {
+    if (selectedProperty || heroPaused || tourOpen || listFormOpen) {
+      return undefined;
+    }
 
-  const commercialListings = [
-    ...commercialProperties,
-    ...customProperties.filter(p => p.category === "commercial")
-  ];
+    const timer = window.setInterval(() => {
+      setHeroIndex(current => (current + 1) % HERO_SLIDES.length);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [selectedProperty, heroPaused, tourOpen, listFormOpen]);
+
+  // SAVE FAVORITES
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "leahBennettSaved",
+        JSON.stringify(savedIds)
+      );
+    } catch {
+      // Ignore storage quota errors for favorites
+    }
+  }, [savedIds]);
+
+  const toggleSaveProperty = propertyId => {
+    setSavedIds(current =>
+      current.includes(propertyId)
+        ? current.filter(id => id !== propertyId)
+        : [...current, propertyId]
+    );
+  };
 
   // SAVE CUSTOM PROPERTIES
 
@@ -924,89 +1391,108 @@ const App = () => {
 
     const category = newProperty.listingCategory;
 
-    const listing = {
-      id: `owner-${Date.now()}`,
-      category,
-      image: newProperty.image,
-      type: newProperty.type,
-      address: newProperty.address.trim(),
+    const isCommercial = category === "commercial";
+const isLand = newProperty.type === "Land";
 
-      price: category === "rent"
-        ? `$${price.toLocaleString("en-US")} / Month`
-        : `$${price.toLocaleString("en-US")}`,
+   const listing = {
+  id: `owner-${Date.now()}`,
+  category,
+  image: newProperty.image,
+  type: newProperty.type,
+  address: newProperty.address.trim(),
 
-      beds: category === "commercial"
-        ? "N/A"
-        : `${newProperty.beds || 0} Beds`,
+  price: category === "rent"
+    ? `$${price.toLocaleString("en-US")} / Month`
+    : `$${price.toLocaleString("en-US")}`,
 
-      baths: `${newProperty.baths || 0} Baths`,
-      area: `${area.toLocaleString("en-US")} Sq Ft`,
-      title: newProperty.title.trim(),
-      description: newProperty.description.trim(),
+  beds: isCommercial || isLand
+    ? "N/A"
+    : `${newProperty.beds || 0} Beds`,
 
-      features: newProperty.features
-        .split("\n")
-        .map(item => item.trim())
-        .filter(Boolean),
+  baths: isCommercial || isLand
+    ? "N/A"
+    : `${newProperty.baths || 0} Baths`,
 
-      sellerName: newProperty.sellerName.trim(),
-      sellerEmail: newProperty.sellerEmail.trim(),
-      floors: newProperty.floors.trim(),
-      parking: newProperty.parking.trim(),
-      furnishing: newProperty.furnishing,
-      condition: newProperty.condition.trim(),
+  area: `${area.toLocaleString("en-US")} Sq Ft`,
 
-      commercialType: category === "commercial"
-        ? newProperty.type
-        : "",
+  title: newProperty.title.trim(),
+  description: newProperty.description.trim(),
 
-      suitableFor: newProperty.suitableFor
-        .split(",")
-        .map(item => item.trim())
-        .filter(Boolean)
-    };
+  features: newProperty.features
+    .split("\n")
+    .map(item => item.trim())
+    .filter(Boolean),
+
+  sellerName: newProperty.sellerName.trim(),
+  sellerEmail: newProperty.sellerEmail.trim(),
+
+  floors: newProperty.floors
+    ? `${newProperty.floors} Floors`
+    : "",
+
+  parking: newProperty.parking
+    ? isCommercial
+      ? `${newProperty.parking} Spaces`
+      : newProperty.parking
+    : "",
+
+  furnishing: newProperty.furnishing,
+  condition: newProperty.condition,
+
+  commercialType: isCommercial
+    ? newProperty.type
+    : "",
+
+  suitableFor: newProperty.suitableFor
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean),
+
+  zoning: newProperty.zoning,
+  frontage: newProperty.frontage,
+  roadAccess: newProperty.roadAccess
+};
 
     setCustomProperties(current => [
       listing,
       ...current
     ]);
 
-    setNewProperty({
-      title: "",
-      address: "",
-      price: "",
-      type: "Residential",
-      listingCategory: "sale",
-      beds: "",
-      baths: "",
-      area: "",
-      description: "",
-      features: "",
-      sellerName: "",
-      sellerEmail: "",
-      image: "",
-      floors: "",
-      parking: "",
-      furnishing: "Unfurnished",
-      condition: "",
-      suitableFor: ""
-    });
+  setNewProperty({
+  title: "",
+  address: "",
+  price: "",
+  type: "Residential",
+  listingCategory: "sale",
+  beds: "",
+  baths: "",
+  area: "",
+  description: "",
+  features: "",
+  sellerName: "",
+  sellerEmail: "",
+  image: "",
+  floors: "",
+  parking: "",
+  furnishing: "Unfurnished",
+  condition: "",
+  suitableFor: "",
+  zoning: "",
+  frontage: "",
+  roadAccess: "Yes"
+});
 
     setListingSuccess("Property published.");
     setListFormOpen(false);
+    setActiveCategory(category);
+    setShowSavedOnly(false);
 
     window.setTimeout(() => {
       setListingSuccess("");
     }, 5000);
 
     window.setTimeout(() => {
-      const target = category === "rent"
-        ? "rent"
-        : category === "commercial"
-          ? "commercial"
-          : "homes";
-
-      document.getElementById(target)?.scrollIntoView({
+      document.getElementById("homes")?.scrollIntoView({
         behavior: "smooth"
       });
     }, 100);
@@ -1035,8 +1521,8 @@ const App = () => {
         });
       },
       {
-        threshold: 0.14,
-        rootMargin: "0px 0px -45px 0px"
+        threshold: 0.08,
+        rootMargin: "0px 0px -20px 0px"
       }
     );
 
@@ -1044,9 +1530,18 @@ const App = () => {
       observer.observe(element);
     });
 
-    return () => observer.disconnect();
+    const fallbackTimer = window.setTimeout(() => {
+      elements.forEach(element => {
+        element.classList.add("is-visible");
+      });
+    }, 600);
 
-  }, [selectedProperty, customProperties]);
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      observer.disconnect();
+    };
+
+  }, [selectedProperty, customProperties, activeCategory, searchQuery, sortBy, showSavedOnly]);
 
   // MODAL BODY SCROLL
 
@@ -1065,6 +1560,14 @@ const App = () => {
   // NAVIGATION FUNCTIONS
 
   const closeMenu = () => setMenuOpen(false);
+
+  const navigateToCategory = category => {
+    setActiveCategory(category);
+    setSearchQuery("");
+    setSortBy("featured");
+    setShowSavedOnly(false);
+    closeMenu();
+  };
 
   const openProperty = property => {
     setSelectedProperty(property);
@@ -1090,6 +1593,16 @@ const App = () => {
     setSubmitted(true);
   };
 
+  const prevHeroSlide = () => {
+    setHeroIndex(current =>
+      (current - 1 + HERO_SLIDES.length) % HERO_SLIDES.length
+    );
+  };
+
+  const nextHeroSlide = () => {
+    setHeroIndex(current => (current + 1) % HERO_SLIDES.length);
+  };
+
   if (selectedProperty) {
     return (
       <PropertyDetail
@@ -1106,100 +1619,260 @@ const App = () => {
     }));
   };
 
+
+  const handleCategoryChange = category => {
+  const defaultType = PROPERTY_TYPES[category][0];
+
+  setNewProperty(current => ({
+    ...current,
+    listingCategory: category,
+    type: defaultType,
+
+    beds: "",
+    baths: "",
+    floors: "",
+    parking: "",
+    furnishing: "Unfurnished",
+    condition: "",
+    suitableFor: "",
+
+    zoning: "",
+    frontage: "",
+    roadAccess: "Yes"
+  }));
+
+  setListingError("");
+};
+
+  const activeHeroSlide = HERO_SLIDES[heroIndex];
+
   return (
     <main>
+      <style>{`
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f7f6f2; color: #273338; }
+        body.modal-open { overflow: hidden; }
+        .site-header { position: sticky; top: 0; z-index: 900; display: flex; align-items: center; justify-content: space-between; padding: 18px 7%; background: rgba(247, 246, 242, 0.94); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(39, 51, 56, 0.08); }
+        .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #273338; font-weight: 700; letter-spacing: 0.14em; font-size: 14px; }
+        .brand small { display: block; font-size: 9px; font-weight: 500; letter-spacing: 0.24em; color: #618764; margin-top: 2px; }
+        .brand-mark { color: #618764; font-size: 20px; }
+        .nav { display: flex; align-items: center; gap: 22px; }
+        .nav a, .nav button { text-decoration: none; color: #273338; font-size: 13px; font-weight: 600; letter-spacing: .01em; transition: color .2s ease, background .2s ease, border-color .2s ease; white-space: nowrap; }
+        .nav a:hover, .nav button:hover { color: #618764; }
+        .nav-list-cta, .nav-contact-cta { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 15px; border: 1px solid #2B5748; border-radius: 999px; cursor: pointer; }
+        .nav-list-cta { background: transparent; color: #2B5748 !important; font: inherit; }
+        .nav-list-cta:hover { background: #e8eee8 !important; }
+        .nav-contact-cta { background: #2B5748; color: #fff !important; }
+        .nav-contact-cta:hover { background: #214638; color: #fff !important; border-color: #214638; }
+        .menu-toggle { display: none; background: transparent; border: 0; color: #273338; cursor: pointer; }
+        .hero { min-height: 82vh; display: flex; align-items: center; padding: 96px 7% 120px; color: #fff; isolation: isolate; }
+        .hero [role="tablist"] button:focus-visible, .hero button:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+        .hero-copy { animation: heroCopyIn .55s ease both; }
+        @keyframes heroCopyIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .hero-copy { max-width: 680px; }
+        .hero-copy h1 { font-size: clamp(38px, 6vw, 68px); font-weight: 500; line-height: 1.08; margin: 0; }
+        .hero-copy em { font-style: italic; font-weight: 400; color: #d8e6da; }
+        .text-link.light-link { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.75); padding-bottom: 4px; }
+        .section-light { padding: 84px 7%; background: #f7f6f2; }
+        .section-heading { text-align: center; max-width: 620px; margin: 0 auto 32px; }
+        .section-kicker { display: block; color: #618764; font-size: 12px; font-weight: 600; letter-spacing: 0.22em; margin-bottom: 10px; }
+        .section-heading h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 500; margin: 0 0 10px; }
+        .section-heading p { color: #66726e; margin: 0; font-size: 15px; }
+        .property-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 24px; }
+        .property-filter { padding: 10px 18px; border-radius: 999px; border: 1px solid #d7ddd7; background: #fff; color: #273338; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .property-filter.active, .property-filter:hover { background: #273338; color: #fff; border-color: #273338; }
+        .property-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 28px; max-width: 1120px; margin: 0 auto; align-items: stretch; }
+        .property-card { min-width: 0; }
+        .property-card:focus-visible { outline: 3px solid #618764; outline-offset: 3px; }
+        .property-image img { display: block; }
+        .property-card { background: #fff; border-radius: 6px; padding: 16px; border: 1px solid rgba(39, 51, 56, 0.08); transition: transform 0.25s ease, box-shadow 0.25s ease; display: flex; flex-direction: column; }
+        .property-card:hover { transform: translateY(-4px); box-shadow: 0 16px 34px rgba(25, 36, 38, 0.08); }
+        .property-image { height: 220px; border-radius: 4px; overflow: hidden; margin-bottom: 16px; position: relative; }
+        .property-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+        .property-card:hover .property-image img { transform: scale(1.04); }
+        .image-arrow { position: absolute; right: 12px; bottom: 12px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.92); color: #273338; display: inline-flex; align-items: center; justify-content: center; }
+        .property-type { color: #618764; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 6px; }
+        .property-card h3 { font-size: 20px; font-weight: 500; margin: 0 0 8px; }
+        .property-address { display: flex; align-items: center; gap: 6px; color: #66726e; font-size: 13px; margin: 0 0 12px; }
+        .property-price { font-size: 20px; font-weight: 600; color: #2B5748; margin: 0 0 14px; }
+        .property-meta { display: flex; flex-wrap: wrap; gap: 14px; padding-top: 12px; margin-top: auto; margin-bottom: 14px; border-top: 1px solid #eef1ee; color: #55615d; font-size: 13px; }
+        .property-meta span { display: inline-flex; align-items: center; gap: 5px; }
+        .property-card-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: #273338; }
+        .video-section { min-height: 420px; display: flex; align-items: center; justify-content: center; text-align: center; background-size: cover; background-position: center; color: #fff; padding: 64px 7%; }
+        .video-content h2 { font-size: clamp(30px, 4.5vw, 46px); font-weight: 500; margin: 0 0 20px; }
+        .play-btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 26px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.14); backdrop-filter: blur(6px); color: #fff; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .testimonials h2 { text-align: center; font-size: clamp(28px, 4vw, 40px); font-weight: 500; margin: 0 0 36px; }
+        .testimonial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; max-width: 1120px; margin: 0 auto; }
+        .testimonial-grid figure { margin: 0; background: #fff; padding: 28px; border-radius: 6px; border: 1px solid rgba(39, 51, 56, 0.08); }
+        .quote-mark { font-size: 40px; line-height: 1; color: #618764; margin-bottom: 10px; }
+        .testimonial-grid blockquote { margin: 0 0 16px; color: #47524f; line-height: 1.7; font-size: 15px; }
+        .testimonial-grid figcaption { font-weight: 600; font-size: 14px; color: #273338; }
+        .footer { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); background: #273338; color: #fff; }
+        .footer-info { padding: 56px 7%; }
+        .footer-brand { color: #fff; margin-bottom: 24px; }
+        .footer-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px; }
+        .footer-actions a { padding: 10px 18px; border: 1px solid rgba(255,255,255,0.4); color: #fff; text-decoration: none; font-size: 13px; border-radius: 999px; }
+        .footer-actions a.filled { background: #618764; border-color: #618764; }
+        .footer-info h2 { font-size: 28px; font-weight: 500; margin: 0 0 12px; }
+        .contact-line { color: rgba(255,255,255,0.78); margin: 0 0 8px; font-size: 14px; }
+        .socials { display: flex; gap: 14px; margin: 22px 0; }
+        .socials a { color: #fff; opacity: 0.82; }
+        .copyright { font-size: 12px; color: rgba(255,255,255,0.55); margin: 24px 0 0; }
+        
+        .contact-form { padding: 56px 7%; display: flex; flex-direction: column; gap: 14px; background: #202b2f; }
+        .contact-form h3 { margin: 0 0 6px; font-size: 22px; font-weight: 500; }
+        .contact-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: rgba(255,255,255,0.85); }
+        .contact-form input, .contact-form textarea { padding: 11px 12px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #fff; font: inherit; }
+        .dark-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; background: #618764; color: #fff; border: 0; border-radius: 4px; font: inherit; font-weight: 500; text-decoration: none; cursor: pointer; }
+        .success-message { padding: 16px; background: rgba(97, 135, 100, 0.25); border: 1px solid #618764; border-radius: 4px; font-size: 14px; }
+        .modal-backdrop { position: fixed; inset: 0; z-index: 1200; background: rgba(20, 30, 32, 0.76); display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .tour-modal { position: relative; max-width: 560px; width: 100%; background: #f7f6f2; color: #273338; border-radius: 6px; padding: 24px; text-align: center; }
+        .tour-modal img { width: 100%; height: 260px; object-fit: cover; border-radius: 4px; margin-bottom: 16px; }
+        .modal-close { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.9); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+        .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .reveal.is-visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 600px) {
+          .section-light { padding: 62px 5%; }
+          .hero { min-height: 76vh; padding: 72px 6% 125px; }
+          .property-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+          .property-image { height: 230px; }
+        }
+        @media (max-width: 860px) {
+          .menu-toggle { display: inline-flex; }
+          .nav { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; padding: 22px 7% 26px; background: #f7f6f2; border-bottom: 1px solid rgba(39, 51, 56, 0.12); box-shadow: 0 14px 24px rgba(39, 51, 56, .08); gap: 17px; }
+          .nav.open { display: flex; }
+          .nav-list-cta, .nav-contact-cta { align-self: flex-start; margin-top: 3px; }
+        }
+      `}</style>
 
-      {/* HEADER */}
+      {/* HEADER / TOP NAVIGATION */}
 
       <header className="site-header">
-
-        <a
-          className="brand"
-          href="#home"
-          onClick={closeMenu}
-        >
+        <a className="brand" href="#home" onClick={closeMenu} aria-label="Leah Bennett Real Estate home">
           <span className="brand-mark">◈</span>
-
           <span>
             LEAH BENNETT
-            <small>REAL ESTATE</small>
+            <small>BUY · SELL · RENT · COMMERCIAL</small>
           </span>
         </a>
 
         <button
           className="menu-toggle"
-          aria-label="Toggle navigation"
+          type="button"
+          aria-label={menuOpen ? "Close navigation" : "Open navigation"}
           aria-expanded={menuOpen}
+          aria-controls="main-navigation"
           onClick={() => setMenuOpen(open => !open)}
         >
           {menuOpen ? <X /> : <Menu />}
         </button>
 
-        <nav className={menuOpen ? "nav open" : "nav"}>
+        <nav id="main-navigation" className={menuOpen ? "nav open" : "nav"} aria-label="Main navigation">
+          <a href="#home" onClick={closeMenu}>Home</a>
 
-          <a href="#homes" onClick={closeMenu}>
-            Buy
+          <a href="#homes" onClick={() => navigateToCategory("all")}>
+            Properties
           </a>
 
-          <a href="#rent" onClick={closeMenu}>
-            Rent
-          </a>
-
-          <a href="#commercial" onClick={closeMenu}>
-            Commercial
-          </a>
-
-          <a href="#testimonials" onClick={closeMenu}>
-            Reviews
-          </a>
+          <a href="#testimonials" onClick={closeMenu}>Reviews</a>
 
           <button
             type="button"
-            className="nav-cta"
-            style={{
-              border: 0,
-              background: "transparent",
-              font: "inherit",
-              cursor: "pointer"
-            }}
+            className="nav-list-cta"
             onClick={() => {
               closeMenu();
               setListFormOpen(true);
             }}
           >
-            List Property <ArrowUpRight size={14} />
+            List Your Property <ArrowUpRight size={14} />
           </button>
 
-          <a
-            className="nav-cta"
-            href="#contact"
-            onClick={closeMenu}
-          >
+          <a className="nav-contact-cta" href="#contact" onClick={closeMenu}>
             Contact <ArrowUpRight size={14} />
           </a>
-
         </nav>
       </header>
 
-      {/* HERO SECTION */}
+      {/* HERO SECTION WITH IMAGE CAROUSEL */}
 
       <section
         className="hero"
         id="home"
+        aria-roledescription="carousel"
+        aria-label="Featured properties"
+        onMouseEnter={() => setHeroPaused(true)}
+        onMouseLeave={() => setHeroPaused(false)}
+        onFocus={() => setHeroPaused(true)}
+        onBlur={event => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setHeroPaused(false);
+        }}
         style={{
-          backgroundImage: `linear-gradient(90deg, rgba(39,51,56,.75), rgba(39,51,56,.2)), url(${IMAGES_3D.heroVilla})`
+          position: "relative",
+          overflow: "hidden"
         }}
       >
 
-        <div className="hero-copy">
+        {/* CAROUSEL BACKGROUND SLIDES */}
+
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0
+          }}
+        >
+          {HERO_SLIDES.map((slide, index) => {
+            const isActive = index === heroIndex;
+
+            return (
+              <div
+                key={slide.label}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage: `linear-gradient(90deg, rgba(20,32,30,.78) 0%, rgba(20,32,30,.42) 48%, rgba(20,32,30,.12) 100%), url(${slide.image})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: isActive ? 1 : 0,
+                  transform: isActive ? "scale(1.03)" : "scale(1)",
+                  transition: "opacity 900ms ease, transform 6000ms ease",
+                  pointerEvents: "none"
+                }}
+              />
+            );
+          })}
+        </div>
+
+        <div
+          className="hero-copy"
+          style={{
+            position: "relative",
+            zIndex: 2
+          }}
+        >
 
           <h1 className="hero-animate hero-delay-1">
-            Where Beautiful
+            Buy, Sell &amp; Rent
             <br />
-           Homes Meet
+            Homes and Find
             <br />
-            <em>Exceptional Living.</em>
+            <em>Commercial Spaces.</em>
           </h1>
+
+          <p
+            className="hero-animate hero-delay-2"
+            style={{
+              maxWidth: 560,
+              margin: "20px 0 0",
+              color: "rgba(255,255,255,.9)",
+              fontSize: "clamp(14px, 1.35vw, 17px)",
+              lineHeight: 1.7
+            }}
+          >
+            Whether you are searching for a home, looking to rent, selling your property,
+            or finding the right commercial space, we are here to help.
+          </p>
 
           <div
             className="hero-animate hero-delay-2"
@@ -1236,6 +1909,107 @@ const App = () => {
 
           </div>
         </div>
+
+        {/* HERO CAROUSEL CONTROLS & CAPTION */}
+
+        <div
+          style={{
+            position: "absolute",
+            left: "7%",
+            right: "7%",
+            bottom: 26,
+            zIndex: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 16
+          }}
+        >
+          <div style={{ color: "rgba(255,255,255,.92)" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.04em" }}>
+              {activeHeroSlide.label}
+            </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,.72)", marginTop: 2 }}>
+              {activeHeroSlide.sublabel}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              role="tablist"
+              aria-label="Choose hero slide"
+              style={{ display: "flex", alignItems: "center", gap: 7 }}
+            >
+              {HERO_SLIDES.map((slide, index) => {
+                const isActive = index === heroIndex;
+
+                return (
+                  <button
+                    key={slide.label}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-label={`Show slide ${index + 1}: ${slide.label}`}
+                    onClick={() => setHeroIndex(index)}
+                    style={{
+                      width: isActive ? 24 : 8,
+                      height: 8,
+                      borderRadius: 999,
+                      border: 0,
+                      padding: 0,
+                      cursor: "pointer",
+                      background: isActive ? "#fff" : "rgba(255,255,255,.45)",
+                      transition: "width 250ms ease, background 250ms ease"
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                type="button"
+                aria-label="Previous slide"
+                onClick={prevHeroSlide}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  border: "1px solid rgba(255,255,255,.45)",
+                  background: "rgba(20,32,30,.45)",
+                  color: "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer"
+                }}
+              >
+                <ChevronLeft size={17} />
+              </button>
+
+              <button
+                type="button"
+                aria-label="Next slide"
+                onClick={nextHeroSlide}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  border: "1px solid rgba(255,255,255,.45)",
+                  background: "rgba(20,32,30,.45)",
+                  color: "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer"
+                }}
+              >
+                <ChevronRight size={17} />
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* LISTING SUCCESS MESSAGE */}
@@ -1267,22 +2041,18 @@ const App = () => {
 
       <PropertySection
         id="homes"
-        title="Homes for Sale"
-        properties={saleListings}
-        onOpen={openProperty}
-      />
-
-      <PropertySection
-        id="rent"
-        title="Homes for Rent"
-        properties={rentListings}
-        onOpen={openProperty}
-      />
-
-      <PropertySection
-        id="commercial"
-        title="Commercial Spaces"
-        properties={commercialListings}
+        title="Explore All Properties"
+        properties={combinedListings}
+        activeCategory={activeCategory}
+        onCategoryChange={setActiveCategory}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        savedIds={savedIds}
+        onToggleSave={toggleSaveProperty}
+        showSavedOnly={showSavedOnly}
+        onToggleSavedOnly={() => setShowSavedOnly(prev => !prev)}
         onOpen={openProperty}
       />
 
@@ -1347,161 +2117,176 @@ const App = () => {
 
       {/* FOOTER */}
 
-      <footer className="footer" id="contact">
+      
+{/* FOOTER */}
 
-        <div className="footer-info">
+<footer className="footer" id="contact">
 
-          <a className="brand footer-brand" href="#home">
-            <span className="brand-mark">◈</span>
+  {/* CONTACT INFORMATION */}
 
-            <span>
-              LEAH BENNETT
-              <small>REAL ESTATE</small>
-            </span>
-          </a>
+  <div className="footer-info">
 
-          <div className="footer-actions">
+    <a className="brand footer-brand" href="#home">
+      <span className="brand-mark">◈</span>
 
-            <a
-              href="#homes"
-              onClick={event => {
-                event.preventDefault();
-                setListFormOpen(true);
-              }}
-            >
-              List Property
-            </a>
+      <span>
+        LEAH BENNETT
+        <small>BUY · SELL · RENT · COMMERCIAL</small>
+      </span>
+    </a>
 
-            <a href="#homes" className="filled">
-              Browse Homes
-            </a>
+    <div className="footer-actions">
 
-          </div>
+      <a
+        href="#homes"
+        onClick={event => {
+          event.preventDefault();
+          setListFormOpen(true);
+        }}
+      >
+        List Property
+      </a>
 
-          <h2>Get in touch</h2>
+      <a href="#homes" className="filled">
+        Browse Homes
+      </a>
 
-          <p className="contact-line">
-            123 Anywhere St., Any City
-          </p>
+    </div>
 
-          <p className="contact-line">
-            (123) 456-7890 · hello@leahbennett.com
-          </p>
+    <h2>Let's Connect</h2>
 
-          <div className="socials">
+    <p className="contact-line">
+      123 Anywhere St., Any City
+    </p>
 
-            <a
-              href="https://instagram.com"
-              aria-label="Instagram"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Instagram />
-            </a>
+    <p className="contact-line">
+      (123) 456-7890
+    </p>
 
-            <a
-              href="https://facebook.com"
-              aria-label="Facebook"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Facebook />
-            </a>
+    <p className="contact-line">
+      hello@leahbennett.com
+    </p>
 
-            <a
-              href="https://linkedin.com"
-              aria-label="LinkedIn"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Linkedin />
-            </a>
+    <div className="socials">
 
-          </div>
+      <a
+        href="https://instagram.com"
+        aria-label="Instagram"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <Instagram />
+      </a>
 
-          <p className="copyright">
-            © 2026 Leah Bennett Real Estate
-          </p>
+      <a
+        href="https://facebook.com"
+        aria-label="Facebook"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <Facebook />
+      </a>
 
-        </div>
+      <a
+        href="https://linkedin.com"
+        aria-label="LinkedIn"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <Linkedin />
+      </a>
 
-        <div
-          className="footer-image"
-          style={{
-            backgroundImage: `url(${IMAGES_3D.contactInterior3d})`
-          }}
-          aria-label="3D interior render"
-        />
+    </div>
 
-        <form
-          className="contact-form"
-          onSubmit={submitForm}
-        >
+    <p className="copyright">
+      © 2026 Leah Bennett Real Estate. All rights reserved.
+    </p>
 
-          <h3>Send a message</h3>
+  </div>
 
-          {submitted ? (
-            <div className="success-message" role="status">
-              Thank you, {form.name || "there"}. We'll be in touch soon.
-            </div>
-          ) : (
-            <>
+  {/* FOOTER IMAGE */}
 
-              <label>
-                Name
+  <div className="footer-image">
+    <img
+      src={IMAGES_3D.contactInterior3d}
+      alt="Luxury modern interior design"
+      loading="lazy"
+    />
+  </div>
 
-                <input
-                  required
-                  autoComplete="name"
-                  value={form.name}
-                  onChange={event => setForm({
-                    ...form,
-                    name: event.target.value
-                  })}
-                  placeholder="Your name"
-                />
-              </label>
+  {/* CONTACT FORM */}
 
-              <label>
-                Email
+  <form
+    className="contact-form"
+    onSubmit={submitForm}
+  >
 
-                <input
-                  required
-                  type="email"
-                  autoComplete="email"
-                  value={form.email}
-                  onChange={event => setForm({
-                    ...form,
-                    email: event.target.value
-                  })}
-                  placeholder="you@example.com"
-                />
-              </label>
+    <h3>Send a Message</h3>
 
-              <label>
-                Message
+    {submitted ? (
+      <div className="success-message" role="status">
+        Thank you, {form.name || "there"}. We'll be in touch soon.
+      </div>
+    ) : (
+      <>
 
-                <textarea
-                  required
-                  rows="3"
-                  value={form.message}
-                  onChange={event => setForm({
-                    ...form,
-                    message: event.target.value
-                  })}
-                  placeholder="How can we help?"
-                />
-              </label>
+        <label>
+          Name
 
-              <button className="dark-btn" type="submit">
-                Send <ArrowUpRight size={15} />
-              </button>
+          <input
+            required
+            autoComplete="name"
+            value={form.name}
+            onChange={event => setForm({
+              ...form,
+              name: event.target.value
+            })}
+            placeholder="Your name"
+          />
+        </label>
 
-            </>
-          )}
+        <label>
+          Email Address
 
-        </form>
-      </footer>
+          <input
+            required
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={event => setForm({
+              ...form,
+              email: event.target.value
+            })}
+            placeholder="you@example.com"
+          />
+        </label>
+
+        <label>
+          Message
+
+          <textarea
+            required
+            rows="4"
+            value={form.message}
+            onChange={event => setForm({
+              ...form,
+              message: event.target.value
+            })}
+            placeholder="How can we help you?"
+          />
+        </label>
+
+        <button className="dark-btn" type="submit">
+          Send Message <ArrowUpRight size={15} />
+        </button>
+
+      </>
+    )}
+
+  </form>
+
+</footer>
+
 
       {/* LIST PROPERTY MODAL */}
 
@@ -1567,399 +2352,524 @@ const App = () => {
               List a Property
             </h2>
 
-            <form
-              onSubmit={publishProperty}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: 16
-              }}
-            >
+           
+<form
+  onSubmit={publishProperty}
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 16
+  }}
+>
+  {/* CATEGORY */}
 
-              <label style={fieldStyle}>
-                Category
+  <label style={fieldStyle}>
+    Listing Category
 
-                <select
-                  required
-                  value={newProperty.listingCategory}
-                  onChange={event => updateNewProperty(
-                    "listingCategory",
-                    event.target.value
-                  )}
-                  style={listingInputStyle}
-                >
-                  <option value="sale">For Sale</option>
-                  <option value="rent">For Rent</option>
-                  <option value="commercial">Commercial</option>
-                </select>
-              </label>
+    <select
+      required
+      value={newProperty.listingCategory}
+      onChange={event =>
+        handleCategoryChange(event.target.value)
+      }
+      style={listingInputStyle}
+    >
+      <option value="sale">For Sale</option>
+      <option value="rent">For Rent</option>
+      <option value="commercial">Commercial</option>
+    </select>
+  </label>
 
-              <label style={fieldStyle}>
-                Title
+  {/* PROPERTY TYPE */}
 
-                <input
-                  required
-                  placeholder="Modern Family Villa"
-                  value={newProperty.title}
-                  onChange={event => updateNewProperty(
-                    "title",
-                    event.target.value
-                  )}
-                  style={listingInputStyle}
-                />
-              </label>
+  <label style={fieldStyle}>
+    Property Type
 
-              <label style={{
-                ...fieldStyle,
-                gridColumn: "1 / -1"
-              }}>
-                Address
+    <select
+      required
+      value={newProperty.type}
+      onChange={event =>
+        updateNewProperty("type", event.target.value)
+      }
+      style={listingInputStyle}
+    >
+      {PROPERTY_TYPES[newProperty.listingCategory].map(type => (
+        <option key={type} value={type}>
+          {type}
+        </option>
+      ))}
+    </select>
+  </label>
 
-                <input
-                  required
-                  placeholder="Street, City, State"
-                  value={newProperty.address}
-                  onChange={event => updateNewProperty(
-                    "address",
-                    event.target.value
-                  )}
-                  style={listingInputStyle}
-                />
-              </label>
+  {/* PROPERTY TITLE */}
 
-              <label style={fieldStyle}>
-                {newProperty.listingCategory === "rent"
-                  ? "Monthly Rent ($)"
-                  : "Price ($)"}
+  <label style={{
+    ...fieldStyle,
+    gridColumn: "1 / -1"
+  }}>
+    Property Title
 
-                <input
-                  required
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="450000"
-                  value={newProperty.price}
-                  onChange={event => updateNewProperty(
-                    "price",
-                    event.target.value
-                  )}
-                  style={listingInputStyle}
-                />
-              </label>
+    <input
+      required
+      placeholder="Enter property title"
+      value={newProperty.title}
+      onChange={event =>
+        updateNewProperty("title", event.target.value)
+      }
+      style={listingInputStyle}
+    />
+  </label>
 
-              <label style={fieldStyle}>
-                Property Type
+  {/* ADDRESS */}
 
-                <select
-                  required
-                  value={newProperty.type}
-                  onChange={event => updateNewProperty(
-                    "type",
-                    event.target.value
-                  )}
-                  style={listingInputStyle}
-                >
-                  <option value="Residential">Residential</option>
-                  <option value="Apartment">Apartment</option>
-                  <option value="Villa">Villa</option>
-                  <option value="Townhouse">Townhouse</option>
-                  <option value="Land">Land</option>
-                  <option value="Office Space">Office Space</option>
-                  <option value="Retail Shop">Retail Shop</option>
-                  <option value="Warehouse">Warehouse</option>
-                  <option value="Commercial Building">Commercial Building</option>
-                </select>
-              </label>
+  <label style={{
+    ...fieldStyle,
+    gridColumn: "1 / -1"
+  }}>
+    Property Address
 
-              {newProperty.listingCategory !== "commercial" && (
-                <>
+    <input
+      required
+      placeholder="Street, City, State"
+      value={newProperty.address}
+      onChange={event =>
+        updateNewProperty("address", event.target.value)
+      }
+      style={listingInputStyle}
+    />
+  </label>
 
-                  <label style={fieldStyle}>
-                    Bedrooms
+  {/* PRICE */}
 
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="3"
-                      value={newProperty.beds}
-                      onChange={event => updateNewProperty(
-                        "beds",
-                        event.target.value
-                      )}
-                      style={listingInputStyle}
-                    />
-                  </label>
+  <label style={fieldStyle}>
+    {newProperty.listingCategory === "rent"
+      ? "Monthly Rent ($)"
+      : "Property Price ($)"}
 
-                  <label style={fieldStyle}>
-                    Bathrooms
+    <input
+      required
+      type="number"
+      min="1"
+      placeholder="Enter amount"
+      value={newProperty.price}
+      onChange={event =>
+        updateNewProperty("price", event.target.value)
+      }
+      style={listingInputStyle}
+    />
+  </label>
 
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="2"
-                      value={newProperty.baths}
-                      onChange={event => updateNewProperty(
-                        "baths",
-                        event.target.value
-                      )}
-                      style={listingInputStyle}
-                    />
-                  </label>
+  {/* AREA */}
 
-                </>
-              )}
+  <label style={fieldStyle}>
+    {newProperty.type === "Land"
+      ? "Land Area (Sq Ft)"
+      : "Built-up Area (Sq Ft)"}
 
-              <label style={fieldStyle}>
-                Area (Sq Ft)
+    <input
+      required
+      type="number"
+      min="1"
+      placeholder="1800"
+      value={newProperty.area}
+      onChange={event =>
+        updateNewProperty("area", event.target.value)
+      }
+      style={listingInputStyle}
+    />
+  </label>
 
-                <input
-                  required
-                  type="number"
-                  min="1"
-                  placeholder="1800"
-                  value={newProperty.area}
-                  onChange={event => updateNewProperty(
-                    "area",
-                    event.target.value
-                  )}
-                  style={listingInputStyle}
-                />
-              </label>
+  {/* RESIDENTIAL FIELDS */}
 
-              {newProperty.listingCategory === "commercial" && (
-                <>
+  {newProperty.listingCategory !== "commercial" &&
+    newProperty.type !== "Land" && (
+      <>
+        <label style={fieldStyle}>
+          Bedrooms
 
-                  <label style={fieldStyle}>
-                    Floors
+          <input
+            required
+            type="number"
+            min="0"
+            placeholder="3"
+            value={newProperty.beds}
+            onChange={event =>
+              updateNewProperty("beds", event.target.value)
+            }
+            style={listingInputStyle}
+          />
+        </label>
 
-                    <input
-                      placeholder="2 Floors"
-                      value={newProperty.floors}
-                      onChange={event => updateNewProperty(
-                        "floors",
-                        event.target.value
-                      )}
-                      style={listingInputStyle}
-                    />
-                  </label>
+        <label style={fieldStyle}>
+          Bathrooms
 
-                  <label style={fieldStyle}>
-                    Parking
+          <input
+            required
+            type="number"
+            min="0"
+            placeholder="2"
+            value={newProperty.baths}
+            onChange={event =>
+              updateNewProperty("baths", event.target.value)
+            }
+            style={listingInputStyle}
+          />
+        </label>
 
-                    <input
-                      placeholder="10 Spaces"
-                      value={newProperty.parking}
-                      onChange={event => updateNewProperty(
-                        "parking",
-                        event.target.value
-                      )}
-                      style={listingInputStyle}
-                    />
-                  </label>
+        <label style={fieldStyle}>
+          Furnishing
 
-                  <label style={fieldStyle}>
-                    Furnishing
+          <select
+            value={newProperty.furnishing}
+            onChange={event =>
+              updateNewProperty("furnishing", event.target.value)
+            }
+            style={listingInputStyle}
+          >
+            <option>Unfurnished</option>
+            <option>Semi-Furnished</option>
+            <option>Fully Furnished</option>
+          </select>
+        </label>
 
-                    <select
-                      value={newProperty.furnishing}
-                      onChange={event => updateNewProperty(
-                        "furnishing",
-                        event.target.value
-                      )}
-                      style={listingInputStyle}
-                    >
-                      <option>Unfurnished</option>
-                      <option>Semi-Furnished</option>
-                      <option>Fully Furnished</option>
-                    </select>
-                  </label>
+        <label style={fieldStyle}>
+          Parking
 
-                  <label style={fieldStyle}>
-                    Condition
+          <input
+            placeholder="2 Spaces"
+            value={newProperty.parking}
+            onChange={event =>
+              updateNewProperty("parking", event.target.value)
+            }
+            style={listingInputStyle}
+          />
+        </label>
 
-                    <input
-                      placeholder="Ready to Occupy"
-                      value={newProperty.condition}
-                      onChange={event => updateNewProperty(
-                        "condition",
-                        event.target.value
-                      )}
-                      style={listingInputStyle}
-                    />
-                  </label>
+        <label style={{
+          ...fieldStyle,
+          gridColumn: "1 / -1"
+        }}>
+          Property Condition
 
-                  <label style={{
-                    ...fieldStyle,
-                    gridColumn: "1 / -1"
-                  }}>
-                    Suitable Uses (comma separated)
+          <select
+            value={newProperty.condition}
+            onChange={event =>
+              updateNewProperty("condition", event.target.value)
+            }
+            style={listingInputStyle}
+          >
+            <option value="">Select condition</option>
+            <option>New Construction</option>
+            <option>Excellent Condition</option>
+            <option>Good Condition</option>
+            <option>Recently Renovated</option>
+            <option>Needs Renovation</option>
+          </select>
+        </label>
+      </>
+    )}
 
-                    <input
-                      placeholder="Office, Retail, Showroom"
-                      value={newProperty.suitableFor}
-                      onChange={event => updateNewProperty(
-                        "suitableFor",
-                        event.target.value
-                      )}
-                      style={listingInputStyle}
-                    />
-                  </label>
+  {/* LAND FIELDS */}
 
-                </>
-              )}
+  {newProperty.type === "Land" && (
+    <>
+      <label style={fieldStyle}>
+        Land Zoning
 
-              <label style={fieldStyle}>
-                Your Name
+        <select
+          value={newProperty.zoning}
+          onChange={event =>
+            updateNewProperty("zoning", event.target.value)
+          }
+          style={listingInputStyle}
+        >
+          <option value="">Select zoning</option>
+          <option>Residential</option>
+          <option>Commercial</option>
+          <option>Agricultural</option>
+          <option>Industrial</option>
+          <option>Mixed Use</option>
+        </select>
+      </label>
 
-                <input
-                  required
-                  placeholder="Full name"
-                  value={newProperty.sellerName}
-                  onChange={event => updateNewProperty(
-                    "sellerName",
-                    event.target.value
-                  )}
-                  style={listingInputStyle}
-                />
-              </label>
+      <label style={fieldStyle}>
+        Road Access
 
-              <label style={fieldStyle}>
-                Email
+        <select
+          value={newProperty.roadAccess}
+          onChange={event =>
+            updateNewProperty("roadAccess", event.target.value)
+          }
+          style={listingInputStyle}
+        >
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </label>
 
-                <input
-                  required
-                  type="email"
-                  placeholder="you@example.com"
-                  value={newProperty.sellerEmail}
-                  onChange={event => updateNewProperty(
-                    "sellerEmail",
-                    event.target.value
-                  )}
-                  style={listingInputStyle}
-                />
-              </label>
+      <label style={{
+        ...fieldStyle,
+        gridColumn: "1 / -1"
+      }}>
+        Road Frontage
 
-              <label style={{
-                ...fieldStyle,
-                gridColumn: "1 / -1"
-              }}>
-                Description
+        <input
+          placeholder="e.g. 40 Feet"
+          value={newProperty.frontage}
+          onChange={event =>
+            updateNewProperty("frontage", event.target.value)
+          }
+          style={listingInputStyle}
+        />
+      </label>
+    </>
+  )}
 
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Key property highlights..."
-                  value={newProperty.description}
-                  onChange={event => updateNewProperty(
-                    "description",
-                    event.target.value
-                  )}
-                  style={{
-                    ...listingInputStyle,
-                    resize: "vertical"
-                  }}
-                />
-              </label>
+  {/* COMMERCIAL FIELDS */}
 
-              <label style={{
-                ...fieldStyle,
-                gridColumn: "1 / -1"
-              }}>
-                Features (one per line)
+  {newProperty.listingCategory === "commercial" && (
+    <>
+      <label style={fieldStyle}>
+        Number of Floors
 
-                <textarea
-                  rows={3}
-                  placeholder={"Parking\nSecurity\nAir conditioning"}
-                  value={newProperty.features}
-                  onChange={event => updateNewProperty(
-                    "features",
-                    event.target.value
-                  )}
-                  style={{
-                    ...listingInputStyle,
-                    resize: "vertical"
-                  }}
-                />
-              </label>
+        <input
+          type="number"
+          min="1"
+          placeholder="2"
+          value={newProperty.floors}
+          onChange={event =>
+            updateNewProperty("floors", event.target.value)
+          }
+          style={listingInputStyle}
+        />
+      </label>
 
-              <label style={{
-                ...fieldStyle,
-                gridColumn: "1 / -1"
-              }}>
-                Photo (max 1 MB)
+      <label style={fieldStyle}>
+        Parking Spaces
 
-                <input
-                  required={!newProperty.image}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleListingImage}
-                  style={{
-                    ...listingInputStyle,
-                    padding: 10
-                  }}
-                />
+        <input
+          type="number"
+          min="0"
+          placeholder="10"
+          value={newProperty.parking}
+          onChange={event =>
+            updateNewProperty("parking", event.target.value)
+          }
+          style={listingInputStyle}
+        />
+      </label>
 
-                {newProperty.image && (
-                  <img
-                    src={newProperty.image}
-                    alt="Preview"
-                    style={{
-                      width: "100%",
-                      maxHeight: 220,
-                      objectFit: "cover",
-                      borderRadius: 4
-                    }}
-                  />
-                )}
-              </label>
+      <label style={fieldStyle}>
+        Furnishing
 
-              {listingError && (
-                <p
-                  role="alert"
-                  style={{
-                    color: "#a33b32",
-                    gridColumn: "1 / -1",
-                    margin: 0
-                  }}
-                >
-                  {listingError}
-                </p>
-              )}
+        <select
+          value={newProperty.furnishing}
+          onChange={event =>
+            updateNewProperty("furnishing", event.target.value)
+          }
+          style={listingInputStyle}
+        >
+          <option>Unfurnished</option>
+          <option>Semi-Furnished</option>
+          <option>Fully Furnished</option>
+        </select>
+      </label>
 
-              <div style={{
-                display: "flex",
-                gap: 12,
-                justifyContent: "flex-end",
-                gridColumn: "1 / -1",
-                flexWrap: "wrap",
-                marginTop: 8
-              }}>
+      <label style={fieldStyle}>
+        Property Condition
 
-                <button
-                  type="button"
-                  onClick={() => setListFormOpen(false)}
-                  style={{
-                    padding: "13px 20px",
-                    border: "1px solid #aeb8b0",
-                    background: "transparent",
-                    color: "#273338",
-                    cursor: "pointer"
-                  }}
-                >
-                  Cancel
-                </button>
+        <select
+          value={newProperty.condition}
+          onChange={event =>
+            updateNewProperty("condition", event.target.value)
+          }
+          style={listingInputStyle}
+        >
+          <option value="">Select condition</option>
+          <option>Ready to Occupy</option>
+          <option>New Construction</option>
+          <option>Recently Renovated</option>
+          <option>Good Condition</option>
+          <option>Needs Renovation</option>
+        </select>
+      </label>
 
-                <button
-                  type="submit"
-                  className="dark-btn"
-                  style={{ cursor: "pointer" }}
-                >
-                  Publish <ArrowUpRight size={15} />
-                </button>
+      <label style={{
+        ...fieldStyle,
+        gridColumn: "1 / -1"
+      }}>
+        Suitable Business Uses
 
-              </div>
+        <input
+          placeholder="Office, Retail, Showroom, Warehouse"
+          value={newProperty.suitableFor}
+          onChange={event =>
+            updateNewProperty("suitableFor", event.target.value)
+          }
+          style={listingInputStyle}
+        />
+      </label>
+    </>
+  )}
 
-            </form>
+  {/* OWNER INFORMATION */}
+
+  <label style={fieldStyle}>
+    Owner Name
+
+    <input
+      required
+      placeholder="Full name"
+      value={newProperty.sellerName}
+      onChange={event =>
+        updateNewProperty("sellerName", event.target.value)
+      }
+      style={listingInputStyle}
+    />
+  </label>
+
+  <label style={fieldStyle}>
+    Email Address
+
+    <input
+      required
+      type="email"
+      placeholder="you@example.com"
+      value={newProperty.sellerEmail}
+      onChange={event =>
+        updateNewProperty("sellerEmail", event.target.value)
+      }
+      style={listingInputStyle}
+    />
+  </label>
+
+  {/* DESCRIPTION */}
+
+  <label style={{
+    ...fieldStyle,
+    gridColumn: "1 / -1"
+  }}>
+    Property Description
+
+    <textarea
+      required
+      rows={4}
+      placeholder="Describe the property, location and highlights..."
+      value={newProperty.description}
+      onChange={event =>
+        updateNewProperty("description", event.target.value)
+      }
+      style={{
+        ...listingInputStyle,
+        resize: "vertical"
+      }}
+    />
+  </label>
+
+  {/* FEATURES */}
+
+  <label style={{
+    ...fieldStyle,
+    gridColumn: "1 / -1"
+  }}>
+    Property Features
+
+    <textarea
+      rows={4}
+      placeholder={"Security\nParking\nGarden\nAir Conditioning"}
+      value={newProperty.features}
+      onChange={event =>
+        updateNewProperty("features", event.target.value)
+      }
+      style={{
+        ...listingInputStyle,
+        resize: "vertical"
+      }}
+    />
+  </label>
+
+  {/* PROPERTY IMAGE */}
+
+  <label style={{
+    ...fieldStyle,
+    gridColumn: "1 / -1"
+  }}>
+    Upload Property Image (Maximum 1 MB)
+
+    <input
+      required={!newProperty.image}
+      type="file"
+      accept="image/*"
+      onChange={handleListingImage}
+      style={{
+        ...listingInputStyle,
+        padding: 10
+      }}
+    />
+
+    {newProperty.image && (
+      <img
+        src={newProperty.image}
+        alt="Property preview"
+        style={{
+          width: "100%",
+          height: 230,
+          objectFit: "cover",
+          borderRadius: 5,
+          marginTop: 10
+        }}
+      />
+    )}
+  </label>
+
+  {/* ERROR */}
+
+  {listingError && (
+    <p
+      role="alert"
+      style={{
+        color: "#a33b32",
+        gridColumn: "1 / -1",
+        margin: 0
+      }}
+    >
+      {listingError}
+    </p>
+  )}
+
+  {/* ACTION BUTTONS */}
+
+  <div style={{
+    display: "flex",
+    gap: 12,
+    justifyContent: "flex-end",
+    gridColumn: "1 / -1",
+    flexWrap: "wrap",
+    marginTop: 10
+  }}>
+    <button
+      type="button"
+      onClick={() => setListFormOpen(false)}
+      style={{
+        padding: "13px 20px",
+        border: "1px solid #aeb8b0",
+        background: "transparent",
+        color: "#273338",
+        cursor: "pointer"
+      }}
+    >
+      Cancel
+    </button>
+
+    <button
+      type="submit"
+      className="dark-btn"
+    >
+      Publish Property <ArrowUpRight size={15} />
+    </button>
+  </div>
+</form>
+
           </section>
         </div>
       )}
